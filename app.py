@@ -45,6 +45,11 @@ import models
 from api import api
 app.register_blueprint(api, url_prefix='/api')
 
+# ─── Auto-create tables on startup (works with Gunicorn in production) ────────
+with app.app_context():
+    db.create_all()
+    print("[OK] Database tables verified/created.")
+
 # ─── Credential Helpers ───────────────────────────────────────────────────────
 COACH_USERNAME      = 'jru_coach'
 COACH_PASSWORD_HASH = generate_password_hash('athletics2024')
