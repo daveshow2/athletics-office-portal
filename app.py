@@ -164,6 +164,197 @@ def athlete_portal():
 def status():
     return jsonify({"status": "Sports Science API is running", "theme": "JRU Blue & Gold"})
 
+@app.route('/admin/seed', methods=['GET', 'POST'])
+def admin_seed():
+    """Protected admin route to seed the live database with demo data."""
+    SECRET = os.environ.get('SEED_SECRET', 'jru-seed-2024')
+    
+    # Simple password protection
+    if request.method == 'GET':
+        return '''
+        <html><body style="font-family:Arial;max-width:500px;margin:80px auto;text-align:center;background:#f8f9fe;">
+        <h2 style="color:#003087;">JRU Athletics — Database Seeder</h2>
+        <p style="color:#666;">Enter the seed password to populate the live database with demo data.</p>
+        <form method="POST">
+            <input name="secret" type="password" placeholder="Enter seed password"
+                style="padding:10px;width:80%;border:1px solid #003087;border-radius:6px;margin:10px 0;font-size:1rem;">
+            <br>
+            <button type="submit"
+                style="background:#003087;color:white;padding:12px 30px;border:none;border-radius:6px;font-size:1rem;cursor:pointer;margin-top:10px;">
+                🚀 Seed Database
+            </button>
+        </form>
+        </body></html>
+        '''
+    
+    if request.form.get('secret') != SECRET:
+        return '<h3 style="color:red;text-align:center;margin-top:100px;">❌ Wrong password.</h3>', 403
+    
+    try:
+        import random, json
+        from datetime import datetime, timedelta
+        from werkzeug.security import generate_password_hash
+        from models import Athlete, TrainingLog, PerformanceResult, RecoveryMetric
+
+        # --- Clear existing data safely ---
+        RecoveryMetric.query.delete()
+        TrainingLog.query.delete()
+        PerformanceResult.query.delete()
+        Athlete.query.delete()
+        db.session.commit()
+
+        DEFAULT_HASH = generate_password_hash('athlete123')
+
+        EVENT_BENCHMARKS = {
+            '100m Sprint':   {'type': 'time',  'range': (10.4, 11.8)},
+            '200m Sprint':   {'type': 'time',  'range': (21.2, 24.5)},
+            '400m Sprint':   {'type': 'time',  'range': (47.5, 53.0)},
+            '800m Run':      {'type': 'time',  'range': (110.0, 135.0)},
+            '1500m Run':     {'type': 'time',  'range': (235.0, 280.0)},
+            'Long Jump':     {'type': 'dist',  'range': (6.50, 7.80)},
+            'High Jump':     {'type': 'dist',  'range': (1.90, 2.20)},
+            'Javelin Throw': {'type': 'dist',  'range': (58.0, 75.0)},
+            'Shot Put':      {'type': 'dist',  'range': (13.5, 18.0)},
+        }
+
+        ATHLETE_DATA = [
+            {'name': 'John Dave Puno',   'event': '100m Sprint',  'category': 'Sprinter',       'age': 21, 'height': 179.6, 'weight': 69.6},
+            {'name': 'Miguel Rivera',    'event': 'Long Jump',    'category': 'Jumper',         'age': 20, 'height': 176.0, 'weight': 72.0},
+            {'name': 'Gabriel Santos',   'event': '800m Run',     'category': 'Middle Distance','age': 22, 'height': 172.0, 'weight': 63.5},
+            {'name': 'Carlo Reyes',      'event': '200m Sprint',  'category': 'Sprinter',       'age': 19, 'height': 175.0, 'weight': 70.0},
+            {'name': 'Angelo Bautista',  'event': '400m Sprint',  'category': 'Sprinter',       'age': 21, 'height': 177.0, 'weight': 73.0},
+            {'name': 'Kevin Torres',     'event': 'Javelin Throw','category': 'Thrower',        'age': 23, 'height': 183.0, 'weight': 85.0},
+            {'name': 'Luis Mendoza',     'event': '1500m Run',    'category': 'Middle Distance','age': 20, 'height': 170.0, 'weight': 60.0},
+            {'name': 'Mark Garcia',      'event': '100m Sprint',  'category': 'Sprinter',       'age': 18, 'height': 174.0, 'weight': 68.0},
+            {'name': 'Paul Villanueva',  'event': 'High Jump',    'category': 'Jumper',         'age': 22, 'height': 180.0, 'weight': 71.0},
+            {'name': 'Rafael Ocampo',    'event': 'Shot Put',     'category': 'Thrower',        'age': 24, 'height': 182.0, 'weight': 92.0},
+        ]
+
+        WARMUPS = [
+            'Jog 800m, dynamic drills, leg swings, arm circles',
+            'Standard Track Warmup: A-Skips, B-Skips, High Knees 3x30m',
+            'Mobility circuit: 10 min foam roll + mobility flow',
+            'JRU Team Protocol: Dynamic stretching + technical prep',
+            'Road run, zigzag stairs, sledge 60m x 3',
+        ]
+        COMPETITIONS = [
+            'NCAA Season 99 Track & Field Meet',
+            'UAAP Season 86 Athletics',
+            'JRU Internal Time Trial',
+            'Recto Cup Invitational',
+            'PRISAA National Finals',
+            'PSC-NSA Assessment Meet',
+        ]
+        SESSION_TYPES = ['Track', 'Track', 'Track', 'Weight Room', 'Active Recovery']
+
+        athletes = []
+        for d in ATHLETE_DATA:
+            a = Athlete(
+                name=d['name'], category=d['category'], event=d['event'],
+                age=d['age'], height=d['height'], weight=d['weight'],
+                password_hash=DEFAULT_HASH
+            )
+            db.session.add(a)
+            athletes.append((a, d['event']))
+        db.session.commit()
+
+        start_date = datetime.now().date() - timedelta(days=180)
+        logs_n = perf_n = rec_n = 0
+
+        for athlete, ev in athletes:
+            bench = EVENT_BENCHMARKS.get(ev, {'type': 'time', 'range': (10.5, 12.0)})
+            base_val = random.uniform(*bench['range'])
+
+            for day in range(181):
+                cur_date = start_date + timedelta(days=day)
+                weekday = cur_date.weekday()
+
+                # Wellness (daily)
+                fatigue = min(7, random.randint(1, 4) + (1 if day % 4 == 0 else 0))
+                rec = RecoveryMetric(
+                    athlete_id=athlete.id, date=cur_date,
+                    sleep_hours=round(random.uniform(7.0, 9.0), 1),
+                    sleep_quality=random.randint(4, 7),
+                    morning_fatigue=fatigue,
+                    soreness=min(7, random.randint(1, 3) + (1 if day % 3 == 0 else 0)),
+                    stress_level=random.randint(1, 5),
+                    motivation=random.randint(4, 7),
+                    created_at=datetime.combine(cur_date, datetime.min.time()).replace(hour=random.randint(6,7), minute=random.randint(0,59))
+                )
+                db.session.add(rec)
+                rec_n += 1
+
+                # Training (Mon–Sat)
+                if weekday < 6:
+                    stype = random.choice(SESSION_TYPES)
+                    intensity = random.randint(5, 9) if day > 90 else random.randint(3, 6)
+                    duration = random.randint(60, 120)
+                    log = TrainingLog(
+                        athlete_id=athlete.id, date=cur_date,
+                        training_type=stype, training_phase='Specific Preparation' if day > 90 else 'General Preparation',
+                        distance=round(random.uniform(600, 2000)) if stype == 'Track' else 0,
+                        tonnage=float(random.randint(3,5) * random.randint(4,8) * random.randint(40,100)) if stype == 'Weight Room' else 0.0,
+                        duration=duration, intensity=intensity,
+                        fatigue_post_workout=min(10, intensity + random.randint(0, 2)),
+                        warmup_notes=random.choice(WARMUPS),
+                        main_set_details=json.dumps({'dist': 100, 'effort': random.randint(85,100), 'time': round(random.uniform(9.8, 11.5), 2)}) if stype == 'Track' else 'Weight room compound movements',
+                        event_trained=ev,
+                        status='confirmed',
+                        created_at=datetime.combine(cur_date, datetime.min.time()).replace(hour=random.randint(9,11), minute=random.randint(0,59))
+                    )
+                    db.session.add(log)
+                    logs_n += 1
+
+                # Performance (every 28 days)
+                if day > 0 and day % 28 == 0:
+                    improvement = (day / 180) * random.uniform(0.02, 0.05)
+                    if bench['type'] == 'time':
+                        val = round(base_val * (1 - improvement) + random.uniform(-0.05, 0.05), 2)
+                        val = max(bench['range'][0], min(bench['range'][1], val))
+                        perf = PerformanceResult(
+                            athlete_id=athlete.id, date=cur_date, event=ev,
+                            time_seconds=val, distance_meters=0.0,
+                            rank=random.randint(1, 5),
+                            competition_name=random.choice(COMPETITIONS),
+                            status='confirmed',
+                            created_at=datetime.combine(cur_date, datetime.min.time()).replace(hour=14)
+                        )
+                    else:
+                        val = round(base_val * (1 + improvement) + random.uniform(-0.05, 0.05), 2)
+                        val = max(bench['range'][0], min(bench['range'][1], val))
+                        perf = PerformanceResult(
+                            athlete_id=athlete.id, date=cur_date, event=ev,
+                            distance_meters=val, time_seconds=0.0,
+                            rank=random.randint(1, 4),
+                            competition_name=random.choice(COMPETITIONS),
+                            status='confirmed',
+                            created_at=datetime.combine(cur_date, datetime.min.time()).replace(hour=14)
+                        )
+                    db.session.add(perf)
+                    perf_n += 1
+
+            if logs_n % 500 == 0:
+                db.session.flush()
+
+        db.session.commit()
+        return f'''
+        <html><body style="font-family:Arial;max-width:600px;margin:80px auto;text-align:center;background:#f8f9fe;">
+        <h2 style="color:#003087;">✅ Database Seeded Successfully!</h2>
+        <p><strong>{len(ATHLETE_DATA)}</strong> Athletes created</p>
+        <p><strong>{logs_n}</strong> Training logs</p>
+        <p><strong>{rec_n}</strong> Wellness entries</p>
+        <p><strong>{perf_n}</strong> Competition results</p>
+        <br>
+        <a href="/" style="background:#003087;color:white;padding:12px 30px;border-radius:6px;text-decoration:none;font-size:1rem;">
+            🏠 Go to Dashboard
+        </a>
+        </body></html>
+        '''
+    except Exception as e:
+        db.session.rollback()
+        return f'<h3 style="color:red;text-align:center;margin-top:100px;">❌ Error: {str(e)}</h3>', 500
+
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
