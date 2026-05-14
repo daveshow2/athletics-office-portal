@@ -378,7 +378,29 @@ def admin_seed():
         return f'<h3 style="color:red;text-align:center;margin-top:100px;">❌ Error: {str(e)}</h3>', 500
 
 
+
+@app.route('/admin/doctor')
+def admin_doctor():
+    """Hidden route to check athlete data status."""
+    from models import Athlete
+    athletes = Athlete.query.all()
+    data = []
+    for a in athletes:
+        data.append({
+            'id': a.id,
+            'name': a.name,
+            'username': make_username(a.name),
+            'has_password': bool(a.password_hash),
+            'event': a.event
+        })
+    return jsonify({
+        'count': len(data),
+        'athletes': data,
+        'db_url_masked': os.environ.get('DATABASE_URL', 'sqlite')[0:15] + "..."
+    })
+
 if __name__ == '__main__':
+
     with app.app_context():
         db.create_all()
     
