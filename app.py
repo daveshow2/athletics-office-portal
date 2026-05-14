@@ -82,27 +82,28 @@ def verify_login(username, password):
             derived = make_username(a.name)
             if derived == username:
                 print(f"[DEBUG] Found athlete: {a.name} (ID: {a.id})")
-                # If no password hash set, auto-assign default 'athlete123'
-                if not a.password_hash:
-                    print(f"[DEBUG] No hash found for {a.name}. Checking default password.")
-                    if password == 'athlete123':
-                        a.password_hash = generate_password_hash('athlete123')
-                        db.session.commit()
-                        print(f"[DEBUG] Password auto-fixed for {a.name}")
-                        return {'role': 'athlete', 'athlete_id': a.id, 'display': a.name}
-                    return None
                 
-                if check_password_hash(a.password_hash, password):
+                # FORCE RESET: If they use the default password, update the hash and let them in
+                if password == 'athlete123':
+                    print(f"[DEBUG] Default password used. Resetting hash for {a.name}")
+                    a.password_hash = generate_password_hash('athlete123')
+                    db.session.commit()
                     return {'role': 'athlete', 'athlete_id': a.id, 'display': a.name}
-                else:
-                    print(f"[DEBUG] Password mismatch for {a.name}")
+                
+                # Normal check for other passwords
+                if a.password_hash and check_password_hash(a.password_hash, password):
+                    return {'role': 'athlete', 'athlete_id': a.id, 'display': a.name}
+                
+                print(f"[DEBUG] Password mismatch for {a.name}")
                 return None
     except Exception as e:
         print(f"[DEBUG] Login Error: {str(e)}")
+        db.session.rollback()
         pass
     
     print(f"[DEBUG] No athlete found matching username: {username}")
     return None
+
 
 
 
