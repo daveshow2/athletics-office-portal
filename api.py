@@ -547,13 +547,15 @@ def add_athlete():
         return jsonify({'error': err}), 422
 
     try:
+        from werkzeug.security import generate_password_hash
         a = Athlete(
             name=cleaned['name'],
             category=cleaned['category'],
             event=cleaned['event'],
             age=cleaned['age'],
             height=cleaned['height'],
-            weight=cleaned['weight']
+            weight=cleaned['weight'],
+            password_hash=generate_password_hash('athlete123')  # Default login password
         )
         db.session.add(a)
         db.session.commit()
@@ -561,6 +563,7 @@ def add_athlete():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 400
+
 
 @api.route('/athlete/<int:athlete_id>', methods=['GET', 'PUT', 'DELETE'])
 def handle_athlete(athlete_id):
