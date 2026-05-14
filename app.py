@@ -59,13 +59,16 @@ def make_username(name):
     Generate a username slug from an athlete's full name.
     e.g. "John Dave Puno" → "johndavepuno"
     """
-    return name.strip().lower().replace(' ', '')
+    import re
+    return re.sub(r'[^a-zA-Z0-9]', '', name).lower()
 
 def verify_login(username, password):
     """
     Verify credentials against the database (athletes) or hashed constant (coach).
     Returns a user dict on success, or None on failure.
     """
+    print(f"[DEBUG] Login Attempt: {username}")
+    
     # Coach check
     if username == COACH_USERNAME:
         if check_password_hash(COACH_PASSWORD_HASH, password):
@@ -76,20 +79,31 @@ def verify_login(username, password):
     try:
         athletes = models.Athlete.query.all()
         for a in athletes:
-            if make_username(a.name) == username:
+            derived = make_username(a.name)
+            if derived == username:
+                print(f"[DEBUG] Found athlete: {a.name} (ID: {a.id})")
                 # If no password hash set, auto-assign default 'athlete123'
                 if not a.password_hash:
+                    print(f"[DEBUG] No hash found for {a.name}. Checking default password.")
                     if password == 'athlete123':
                         a.password_hash = generate_password_hash('athlete123')
                         db.session.commit()
+                        print(f"[DEBUG] Password auto-fixed for {a.name}")
                         return {'role': 'athlete', 'athlete_id': a.id, 'display': a.name}
-                    return None  # No hash set and wrong default password
+                    return None
+                
                 if check_password_hash(a.password_hash, password):
                     return {'role': 'athlete', 'athlete_id': a.id, 'display': a.name}
-                return None  # username matched but wrong password
-    except Exception:
+                else:
+                    print(f"[DEBUG] Password mismatch for {a.name}")
+                return None
+    except Exception as e:
+        print(f"[DEBUG] Login Error: {str(e)}")
         pass
+    
+    print(f"[DEBUG] No athlete found matching username: {username}")
     return None
+
 
 
 def login_required(role=None):
