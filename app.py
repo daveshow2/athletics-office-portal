@@ -71,17 +71,26 @@ def verify_login(username, password):
         if check_password_hash(COACH_PASSWORD_HASH, password):
             return {'role': 'coach', 'athlete_id': None, 'display': 'Coach'}
         return None
+
     # Athlete check — look up by derived username
     try:
         athletes = models.Athlete.query.all()
         for a in athletes:
             if make_username(a.name) == username:
-                if a.password_hash and check_password_hash(a.password_hash, password):
+                # If no password hash set, auto-assign default 'athlete123'
+                if not a.password_hash:
+                    if password == 'athlete123':
+                        a.password_hash = generate_password_hash('athlete123')
+                        db.session.commit()
+                        return {'role': 'athlete', 'athlete_id': a.id, 'display': a.name}
+                    return None  # No hash set and wrong default password
+                if check_password_hash(a.password_hash, password):
                     return {'role': 'athlete', 'athlete_id': a.id, 'display': a.name}
                 return None  # username matched but wrong password
     except Exception:
         pass
     return None
+
 
 def login_required(role=None):
     """Decorator factory for role-based route protection."""
