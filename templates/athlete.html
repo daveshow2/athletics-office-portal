@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JRU Athlete Profile - {{ athlete.name }}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg jru-navbar">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <div class="logo-circle me-2">JRU</div>
+                <span class="fw-bold">Jose Rizal University <span class="fw-light d-none d-sm-inline">| Athletics</span></span>
+            </a>
+            <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="/">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="/athletes">Athletes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active fw-bold" href="/athlete/{{ athlete.id }}">Athlete Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="/training-logs">Training Logs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold d-flex align-items-center" href="/approvals">
+                            Approvals
+                            <span id="global-pending-badge" class="badge rounded-pill bg-danger ms-1" style="display: none; font-size: 0.65rem;">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0 d-flex align-items-center">
+                        <span class="badge me-2" style="background:linear-gradient(135deg,#FFC107,#e6ac00);color:#003087;font-size:0.72rem;padding:0.3rem 0.7rem;border-radius:20px;">
+                            <i class="bi bi-shield-fill me-1"></i>Coach: {{ display_name }}
+                        </span>
+                        <a href="/logout" class="btn btn-sm" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;font-size:0.8rem;">
+                            <i class="bi bi-box-arrow-right me-1"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4 mb-5">
+        <!-- Header Profile -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="dashboard-card d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light rounded-circle p-4 me-4 text-jru-blue fw-bold fs-2" style="width: 80px; height: 80px; display:flex; align-items:center; justify-content:center;">
+                            {{ athlete.name.split(' ')[0][0] }}{{ athlete.name.split(' ')[-1][0] }}
+                        </div>
+                        <div>
+                            <span class="badge badge-jru-gold mb-2 text-uppercase fw-bold">Heavy Bombers Track & Field</span>
+                            <h1 class="page-title mb-0">{{ athlete.name }}</h1>
+                            <div class="d-flex align-items-center mt-2">
+                                <p class="text-muted fs-5 mb-0 me-3">{{ athlete.age }} yrs | {{ athlete.height }}cm | {{ athlete.weight }}kg</p>
+                                <div class="event-selector-container">
+                                    <select id="event-view-selector" class="form-select form-select-sm border-jru-gold fw-bold text-jru-blue" style="width: auto; min-width: 150px;">
+                                        <!-- Populated dynamically -->
+                                        <option value="{{ athlete.event }}">{{ athlete.event }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-jru-primary me-2 mb-2" data-bs-toggle="modal" data-bs-target="#editAthleteModal">
+                            <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                        </button>
+                        <button class="btn btn-jru-outline me-2 mb-2" data-bs-toggle="modal" data-bs-target="#logTrainingModal">
+                            <i class="bi bi-calendar-check me-1"></i> Log Training
+                        </button>
+                        <button class="btn btn-jru-outline me-2 mb-2" data-bs-toggle="modal" data-bs-target="#addWellnessModal">
+                            <i class="bi bi-heart-pulse me-1"></i> Log Wellness
+                        </button>
+                        <button class="btn btn-jru-outline mb-2" data-bs-toggle="modal" data-bs-target="#addPerformanceModal">
+                            <i class="bi bi-trophy me-1"></i> Log Result
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div class="modal fade" id="editAthleteModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header jru-navbar text-white">
+                        <h5 class="modal-title">Edit Athlete Profile</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editProfileForm">
+                            <div class="mb-3">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" class="form-control" name="name" value="{{ athlete.name }}" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Age</label>
+                                    <input type="number" class="form-control" name="age" value="{{ athlete.age }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Primary Event</label>
+                                    <input type="text" class="form-control" name="event" value="{{ athlete.event }}" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Height (cm)</label>
+                                    <input type="number" step="any" class="form-control" name="height" value="{{ athlete.height }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Weight (kg)</label>
+                                    <input type="number" step="any" class="form-control" name="weight" value="{{ athlete.weight }}" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-jru-primary w-100">Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <!-- Prediction Card -->
+            <div class="col-md-4">
+                <div class="dashboard-card d-flex flex-column justify-content-center text-center">
+                    <h5 class="card-title mb-3">Predicted Peak Performance</h5>
+                    <div class="display-4 fw-bold text-jru-gold mb-2" id="athlete-peak-time">--</div>
+                    <div class="text-muted fs-5" id="athlete-peak-date">Expected: --</div>
+                </div>
+            </div>
+            
+            <!-- Injury Risk Card -->
+            <div class="col-md-8">
+                <div class="dashboard-card">
+                    <h5 class="card-title mb-3">Decision Support System: Status</h5>
+                    <div class="d-flex align-items-center mb-3">
+                        <h3 class="mb-0 me-3">Current Risk Level:</h3>
+                        <span id="athlete-risk-badge" class="badge fs-4">-</span>
+                    </div>
+                    <div class="p-3 bg-light rounded text-jru-blue fw-bold border-start border-4 border-jru-gold">
+                        <i class="bi bi-robot me-2"></i><strong>System Recommendation:</strong> <span id="athlete-recommendation">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h5 class="card-title mb-3">Personal Performance Trend</h5>
+                    <canvas id="athletePerformanceChart" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="dashboard-card">
+                    <h5 class="card-title mb-3">Training Load vs Morning Fatigue</h5>
+                    <canvas id="athleteLoadChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Race Strategy -->
+        <div class="row mb-4" id="race-strategy-row" style="display: none;">
+            <div class="col-12">
+                <div class="dashboard-card shadow-sm border-0">
+                    <h5 class="card-title mb-3"><i class="bi bi-lightning-charge me-2 text-jru-gold"></i> AI Race Strategy Recommendation</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="strategy-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-jru-blue">Distance Phase</th>
+                                    <th class="text-jru-blue">Target</th>
+                                    <th class="text-jru-blue">Coaching Strategy</th>
+                                </tr>
+                            </thead>
+                            <tbody id="strategy-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training History Table -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="dashboard-card shadow-sm border-0">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0"><i class="bi bi-journal-text me-2 text-jru-blue"></i> Training Log History</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Dist (m)</th>
+                                    <th>Dur (min)</th>
+                                    <th class="text-center">Int (1-10)</th>
+                                    <th class="text-center">Fatigue</th>
+                                    <th>Load</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="training-history-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance History Table -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="dashboard-card shadow-sm border-0">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title mb-0"><i class="bi bi-clock-history me-2 text-jru-gold"></i> Competition Records & History</h5>
+                        <span id="event-tag-badge" class="badge bg-jru-blue text-uppercase">--</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Meet / Competition</th>
+                                    <th>Result</th>
+                                    <th>Rank</th>
+                                    <th>Performance Pts</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="performance-history-body">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Log Training Modal -->
+    <div class="modal fade" id="logTrainingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title">Submit Daily Training Log</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="logTrainingForm">
+                        <input type="hidden" name="athlete_id" value="{{ athlete.id }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Workout Type</label>
+                                <select class="form-select" name="training_type" id="workoutTypeSelect" required>
+                                    <option value="Track">Track Session</option>
+                                    <option value="Weight Room">Weight Room</option>
+                                    <option value="Recovery">Active Recovery</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3" id="training-distance-container">
+                                <label class="form-label">Distance (m)</label>
+                                <input type="number" class="form-control" name="distance" placeholder="0" required>
+                                <div class="form-text">Total cumulative meters (e.g. 10x100m = 1000m).</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Duration (min)</label>
+                                <input type="number" class="form-control" name="duration" placeholder="0" required>
+                                <div class="form-text">Active training time in minutes.</div>
+                            </div>
+                        </div>
+
+                        <!-- Session Breakdown (Advanced Sprinter Specs) -->
+                        <div class="accordion mb-3" id="sessionBreakdownAccordion">
+                            <div class="accordion-item" style="border: 1px solid #d0d7f0; border-radius: 8px; overflow: hidden;">
+                                <h2 class="accordion-header" id="headingBreakdown">
+                                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBreakdown" aria-expanded="false" aria-controls="collapseBreakdown" style="background: f8f9fe; font-size: 0.9rem; font-weight: 600; color: #003066;">
+                                        <i class="bi bi-list-task me-2"></i>Detailed Session Breakdown (Optional)
+                                    </button>
+                                </h2>
+                                <div id="collapseBreakdown" class="accordion-collapse collapse" aria-labelledby="headingBreakdown" data-bs-parent="#sessionBreakdownAccordion">
+                                    <div class="accordion-body p-3" style="background: #ffffff;">
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold">Warm-up / Drills</label>
+                                            <textarea class="form-control form-control-sm" name="warmup_notes" rows="2" placeholder="e.g. Road run, laps, zigzag stairs, sledge 60m..."></textarea>
+                                        </div>
+                                        
+                                        <div class="mb-3 p-2 rounded" style="background: #fff9e6; border: 1px border #ffeeba;">
+                                            <label class="form-label small fw-bold text-dark"><i class="bi bi-fire me-1"></i>Main Set (Peak Performance)</label>
+                                            <div class="row g-2">
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm" name="main_dist" placeholder="Dist (m)">
+                                                </div>
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm" name="main_effort" placeholder="Effort (%)" min="0" max="100">
+                                                </div>
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm" name="main_time" placeholder="Time (s)" step="0.01">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="form-label small fw-bold">Additional Workout / Fartlek</label>
+                                            <textarea class="form-control form-control-sm" name="extra_work" rows="2" placeholder="e.g. Fartlek 100m x 10 with 100m walk rest..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label d-flex justify-content-between">
+                                    Intensity (1-10)
+                                    <span class="badge bg-jru-blue intensity-value text-white">5</span>
+                                </label>
+                                <input type="range" class="form-range intensity-range" name="intensity" min="1" max="10" step="1" value="5">
+                                <div class="form-text">RPE: 1-2 Recovery, 5-6 Moderate, 9-10 Maximal.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Fatigue (1-10)</label>
+                                <input type="range" class="form-range" name="fatigue" min="1" max="10" step="1" value="5">
+                                <div class="form-text">Post-Session: 1 Fresh, 10 Exhausted.</div>
+                            </div>
+                        </div>
+                        <div class="mb-3 p-2 bg-light rounded d-flex justify-content-between align-items-center border-start border-4 border-jru-gold">
+                            <span class="fw-bold text-jru-blue">Session Impact:</span>
+                            <span id="live-load-preview" class="badge bg-jru-blue fs-6">0 Load Units</span>
+                        </div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Submit Training Log</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Result Modal -->
+    <div class="modal fade" id="editResultModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit Competition Result</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editResultForm">
+                        <input type="hidden" name="result_id" id="edit-result-id">
+                        <div class="mb-3">
+                            <label class="form-label">Competition/Meet Name</label>
+                            <input type="text" class="form-control" name="competition" id="edit-competition" placeholder="e.g. NCAA Season 99 Track Meet">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" id="edit-date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Event</label>
+                                <input type="text" class="form-control" name="event" id="edit-event" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Time (s)</label>
+                                <input type="number" step="0.01" class="form-control" name="time" id="edit-time" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Dist (m)</label>
+                                <input type="number" step="0.01" class="form-control" name="distance" id="edit-distance" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Rank</label>
+                                <input type="number" class="form-control" name="rank" id="edit-rank" placeholder="1">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Result Modal -->
+    <div class="modal fade" id="addPerformanceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title">Log Competition Result</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPerformanceForm">
+                        <input type="hidden" name="athlete_id" value="{{ athlete.id }}">
+                        <div class="mb-3">
+                            <label class="form-label">Competition/Meet Name</label>
+                            <input type="text" class="form-control" name="competition" placeholder="e.g. NCAA Season 99 Track Meet">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Event</label>
+                                <input type="text" class="form-control" name="event" value="{{ athlete.event }}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Time (s)</label>
+                                <input type="number" step="0.01" class="form-control" name="time" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Dist (m)</label>
+                                <input type="number" step="0.01" class="form-control" name="distance" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Rank</label>
+                                <input type="number" class="form-control" name="rank" placeholder="1">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Log Result</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wellness/Recovery Modal -->
+    <div class="modal fade" id="addWellnessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title">Daily Wellness Check-in</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addWellnessForm">
+                        <input type="hidden" name="athlete_id" value="{{ athlete.id }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sleep (hours)</label>
+                                <input type="number" step="0.5" class="form-control" name="sleep_hours" value="8" required>
+                            </div>
+                        </div>
+                        <div class="mb-3 p-3 rounded" style="background:#f8f9fe; border:1px solid #d0d7f0;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-battery me-1"></i>Morning Fatigue (1-7 Hooper)</span>
+                                <span class="badge bg-jru-blue" id="fatigue-hi-badge">4</span>
+                            </label>
+                            <input type="range" class="form-range" name="morning_fatigue" id="fatigueHiSlider" min="1" max="7" step="1" value="4">
+                            <div class="d-flex justify-content-between" style="font-size:0.75rem; color:#6c757d;">
+                                <span>1 Very Low</span><span>4 Moderate</span><span>7 Very High</span>
+                            </div>
+                        </div>
+                        <div class="mb-3 p-3 rounded" style="background:#fff8f0; border:1px solid #ffe0b2;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-person-exclamation me-1"></i>Muscle Soreness (1-7)</span>
+                                <span class="badge bg-warning text-dark" id="soreness-hi-badge">4</span>
+                            </label>
+                            <input type="range" class="form-range" name="soreness" id="sorenessHiSlider" min="1" max="7" step="1" value="4">
+                            <div class="d-flex justify-content-between" style="font-size:0.75rem; color:#6c757d;">
+                                <span>1 None</span><span>4 Moderate</span><span>7 Severe</span>
+                            </div>
+                        </div>
+                        <div class="mb-3 p-3 rounded" style="background:#fdf0ff; border:1px solid #e1bee7;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-brain me-1"></i>Stress Level (1-7)</span>
+                                <span class="badge bg-primary" id="stress-hi-badge" style="background:#7b1fa2 !important;">4</span>
+                            </label>
+                            <input type="range" class="form-range" name="stress_level" id="stressHiSlider" min="1" max="7" step="1" value="4">
+                            <div class="d-flex justify-content-between" style="font-size:0.75rem; color:#6c757d;">
+                                <span>1 Very Low</span><span>4 Moderate</span><span>7 Very High</span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Motivation & Mood (1-7)</label>
+                            <input type="range" class="form-range" name="motivation" min="1" max="7" value="5">
+                            <div class="form-text">1 Very Low, 7 Very Motivated.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Sleep Quality (1-7)</label>
+                            <input type="range" class="form-range" name="sleep_quality" min="1" max="7" value="5">
+                            <div class="form-text">1 Very Poor, 7 Excellent.</div>
+                        </div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Submit Wellness Log</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Day Details Modal (Chart Interactivity) -->
+    <div class="modal fade" id="dayDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title" id="day-details-title"><i class="bi bi-info-circle me-2"></i>Day Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" id="day-details-body">
+                    <!-- Content injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header text-white">
+                <strong class="me-auto">JRU Athletics Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-message"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Shared Utilities -->
+    <script src="{{ url_for('static', filename='js/ui_utils.js') }}"></script>
+    <!-- Edit Result Modal Logic (global so onclick works) -->
+    <script>
+        const athleteId = parseInt("{{ athlete.id }}", 10);
+        function openEditResultModal(resultId) {
+            fetch(`/api/perf_result/${resultId}`)
+                .then(r => r.json())
+                .then(d => {
+                    document.getElementById('edit-result-id').value = d.id;
+                    document.getElementById('edit-competition').value = d.competition_name || '';
+                    document.getElementById('edit-date').value = d.date;
+                    document.getElementById('edit-event').value = d.event;
+                    document.getElementById('edit-time').value = d.time_seconds || '';
+                    document.getElementById('edit-distance').value = d.distance_meters || '';
+                    document.getElementById('edit-rank').value = d.rank || '';
+                    new bootstrap.Modal(document.getElementById('editResultModal')).show();
+                })
+                .catch(() => alert('Failed to load result data.'));
+        }
+    </script>
+    <!-- Custom Logic -->
+    <script src="{{ url_for('static', filename='js/athlete.js') }}"></script>
+</body>
+</html>

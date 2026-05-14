@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portal — {{ athlete.name }} | JRU Athletics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .portal-hero {
+            background: linear-gradient(135deg, #003087 0%, #0a1f5e 100%);
+            color: white;
+            padding: 2rem 0 0;
+            margin-bottom: 0;
+        }
+        .athlete-avatar {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #FFC107, #e6ac00);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; font-weight: 800;
+            color: #003087;
+            box-shadow: 0 6px 20px rgba(255,193,7,0.4);
+            flex-shrink: 0;
+        }
+        .portal-stat-card {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        .portal-stat-card .value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #FFC107;
+        }
+        .portal-stat-card .label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.7);
+        }
+        .portal-tabs .nav-link {
+            color: rgba(255,255,255,0.65);
+            border: none;
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            padding: 0.8rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .portal-tabs .nav-link:hover { color: white; }
+        .portal-tabs .nav-link.active {
+            color: #FFC107;
+            border-bottom-color: #FFC107;
+            background: transparent;
+        }
+        .tab-section { display: none; }
+        .tab-section.active { display: block; }
+        .risk-badge-high { background: #dc3545; color: white; }
+        .risk-badge-moderate { background: #fd7e14; color: white; }
+        .risk-badge-low { background: #28a745; color: white; }
+        .action-btn-row { gap: 0.6rem; }
+        .metric-mini {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            border-left: 4px solid #003087;
+        }
+        .metric-mini.gold { border-left-color: #FFC107; }
+        .metric-mini .val { font-size: 1.6rem; font-weight: 800; color: #003087; }
+        .metric-mini.gold .val { color: #856400; }
+        .metric-mini .lbl { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; }
+        .athlete-nav-badge {
+            background: linear-gradient(135deg, #FFC107, #e6ac00);
+            color: #003087;
+            border-radius: 20px;
+            padding: 0.25rem 0.8rem;
+            font-weight: 700;
+            font-size: 0.78rem;
+            white-space: nowrap;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            border-radius: 8px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.25);
+            color: white;
+        }
+        .table-log th { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-card h5 { color: #003087; font-weight: 700; margin-bottom: 1.2rem; }
+    </style>
+</head>
+<body style="background: #f4f7fb; font-family: 'Inter', sans-serif;">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg jru-navbar">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand d-flex align-items-center" href="/my-portal">
+                <div class="logo-circle me-2">JRU</div>
+                <span class="fw-bold">Jose Rizal University <span class="fw-light d-none d-sm-inline">| Athletics</span></span>
+            </a>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+                <span class="athlete-nav-badge"><i class="bi bi-person-fill me-1"></i>{{ athlete.name }}</span>
+                <a href="/logout" class="logout-btn"><i class="bi bi-box-arrow-right me-1"></i>Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="portal-hero">
+        <div class="container py-3">
+            <div class="d-flex align-items-center mb-3 gap-3 flex-wrap">
+                <div class="athlete-avatar">{{ athlete.name.split(' ')[0][0] }}{{ athlete.name.split(' ')[-1][0] }}</div>
+                <div>
+                    <div class="badge mb-1" style="background: rgba(255,193,7,0.2); color: #FFC107; font-size: 0.7rem; letter-spacing: 1px;">HEAVY BOMBERS TRACK &amp; FIELD</div>
+                    <h1 style="font-size:1.8rem; font-weight:800; margin:0;">{{ athlete.name }}</h1>
+                    <p style="color:rgba(255,255,255,0.7); margin:0; font-size:0.9rem;">{{ athlete.event }} &bull; {{ athlete.age }} yrs &bull; {{ athlete.height }}cm &bull; {{ athlete.weight }}kg</p>
+                </div>
+                <div class="ms-auto d-flex flex-wrap action-btn-row">
+                    <button class="btn btn-sm btn-jru-primary" data-bs-toggle="modal" data-bs-target="#logTrainingModal">
+                        <i class="bi bi-calendar-check me-1"></i>Log Training
+                    </button>
+                    <button class="btn btn-sm btn-jru-outline" data-bs-toggle="modal" data-bs-target="#logWellnessModal">
+                        <i class="bi bi-heart-pulse me-1"></i>Log Wellness
+                    </button>
+                    <button class="btn btn-sm btn-jru-outline" data-bs-toggle="modal" data-bs-target="#logResultModal">
+                        <i class="bi bi-trophy me-1"></i>Log Result
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stat Row -->
+            <div class="row g-3 pb-3" id="portal-stats-row">
+                <div class="col-6 col-md-3">
+                    <div class="portal-stat-card">
+                        <div class="value" id="ps-sessions">--</div>
+                        <div class="label">Training Sessions</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="portal-stat-card">
+                        <div class="value" id="ps-avgload">--</div>
+                        <div class="label">Avg Session Load</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="portal-stat-card">
+                        <div class="value" id="ps-latestresult">--</div>
+                        <div class="label">Latest Result</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="portal-stat-card">
+                        <div class="value" id="ps-risk">--</div>
+                        <div class="label">Injury Risk</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav portal-tabs" id="portalTabs">
+                <li class="nav-item"><button class="nav-link active" data-tab="analytics"><i class="bi bi-graph-up me-1"></i>My Analytics</button></li>
+                <li class="nav-item"><button class="nav-link" data-tab="logs"><i class="bi bi-journal-text me-1"></i>Training Logs</button></li>
+                <li class="nav-item"><button class="nav-link" data-tab="results"><i class="bi bi-trophy me-1"></i>My Results</button></li>
+                <li class="nav-item"><button class="nav-link" data-tab="settings"><i class="bi bi-gear me-1"></i>Settings</button></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="container py-4">
+
+        <!-- ANALYTICS TAB -->
+        <div class="tab-section active" id="tab-analytics">
+
+            <!-- Event Filter Bar -->
+            <div class="section-card p-3 mb-3 d-flex align-items-center gap-3 flex-wrap" style="border-left: 4px solid #003087;">
+                <div class="d-flex align-items-center gap-2 flex-grow-1">
+                    <i class="bi bi-funnel-fill text-jru-blue fs-5"></i>
+                    <span class="fw-bold text-jru-blue">Viewing Event:</span>
+                    <select id="portal-analytics-event" class="form-select form-select-sm" style="max-width:220px; border-color:#003087; font-weight:600;">
+                        <option value="">Loading events...</option>
+                    </select>
+                </div>
+                <span class="text-muted" style="font-size:0.82rem;">Switch events to see event-specific analytics &amp; predictions.</span>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-3 col-6"><div class="metric-mini"><div class="val" id="an-peak">--</div><div class="lbl">Predicted Peak</div></div></div>
+                <div class="col-md-3 col-6"><div class="metric-mini gold"><div class="val" id="an-peakdate" style="font-size:1rem; padding-top:0.4rem;">--</div><div class="lbl">Peak Date</div></div></div>
+                <div class="col-md-3 col-6"><div class="metric-mini"><div class="val" id="an-risk">--</div><div class="lbl">Injury Risk</div></div></div>
+                <div class="col-md-3 col-6"><div class="metric-mini gold"><div class="val" id="an-confidence">--</div><div class="lbl">Confidence</div></div></div>
+            </div>
+
+            <!-- Recommendation Banner -->
+            <div class="section-card p-3 mb-3" id="rec-banner" style="border-left: 4px solid #FFC107; padding: 1rem !important;">
+                <i class="bi bi-robot me-2 text-jru-gold"></i>
+                <strong>System Recommendation:</strong> <span id="an-recommendation">Loading...</span>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="section-card">
+                        <h5><i class="bi bi-graph-up me-2"></i>Performance Trend</h5>
+                        <canvas id="portalPerfChart" height="220"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="section-card">
+                        <h5><i class="bi bi-activity me-2"></i>Training Load vs Fatigue (14 Days)</h5>
+                        <canvas id="portalLoadChart" height="220"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Race Strategy -->
+            <div class="section-card" id="strategy-section" style="display:none;">
+                <h5><i class="bi bi-lightning-charge me-2 text-jru-gold"></i>AI Race Strategy Recommendation</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-jru-blue">Phase</th>
+                                <th class="text-jru-blue">Target</th>
+                                <th class="text-jru-blue">Strategy</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portal-strategy-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRAINING LOGS TAB -->
+        <div class="tab-section" id="tab-logs">
+            <div class="section-card">
+                <h5><i class="bi bi-journal-text me-2"></i>My Training History</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-log">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Event</th>
+                                <th>Distance (m)</th>
+                                <th>Duration (min)</th>
+                                <th>Intensity</th>
+                                <th>Fatigue</th>
+                                <th>Load</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portal-logs-body">
+                            <tr><td colspan="9" class="text-center text-muted">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESULTS TAB -->
+        <div class="tab-section" id="tab-results">
+            <div class="section-card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Competition Records &amp; History</h5>
+                    <div class="d-flex align-items-center">
+                        <label for="eventFilter" class="me-2 text-muted small">Filter by Event:</label>
+                        <select class="form-select form-select-sm" id="eventFilter" style="width: auto;">
+                            <!-- Populated via JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-log">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Meet / Competition</th>
+                                <th>Event</th>
+                                <th>Result</th>
+                                <th>Rank</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portal-results-body">
+                            <tr><td colspan="6" class="text-center text-muted">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS TAB -->
+        <div class="tab-section" id="tab-settings">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="section-card">
+                        <h5><i class="bi bi-lock me-2"></i>Change Your Password</h5>
+                        <p class="text-muted small mb-4">For your security, choose a password that is at least 6 characters long and different from your current one.</p>
+                        <div id="change-pwd-alert" class="alert d-none py-2" role="alert"></div>
+                        <form id="changePasswordForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Current Password</label>
+                                <input type="password" class="form-control" id="cpwd-current" placeholder="Enter your current password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">New Password</label>
+                                <input type="password" class="form-control" id="cpwd-new" placeholder="At least 6 characters" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Confirm New Password</label>
+                                <input type="password" class="form-control" id="cpwd-confirm" placeholder="Re-enter new password" required>
+                            </div>
+                            <button type="submit" class="btn btn-jru-primary w-100">
+                                <i class="bi bi-shield-lock me-1"></i> Update Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Log Training Modal -->
+    <div class="modal fade" id="logTrainingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title"><i class="bi bi-calendar-check me-2"></i>Submit Daily Training Log</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 mb-3" style="font-size:0.82rem;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Data Accuracy Note:</strong> Complete this form <em>immediately after</em> the session ends. Do not estimate from memory.
+                    </div>
+                    <form id="logTrainingForm">
+                        <input type="hidden" name="athlete_id" value="{{ athlete.id }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Event Trained For</label>
+                                <select class="form-select" id="portal-event-select" name="event_trained">
+                                    <option value="{{ athlete.event }}" selected>{{ athlete.event }} (Primary)</option>
+                                </select>
+                                <div class="form-text">All your competitive events are listed here.</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label d-flex justify-content-between align-items-center">
+                                    Workout Type
+                                    <span class="badge bg-jru-blue" id="portal-event-badge" style="font-size:0.68rem;">{{ athlete.event }}</span>
+                                </label>
+                                <select class="form-select" id="workoutTypeSelect" name="training_type" required>
+                                    <option disabled selected>Loading event drills...</option>
+                                </select>
+                                <div class="form-text">Drills shown are specific to your events.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Training Phase</label>
+                                <select class="form-select" name="training_phase">
+                                    <option value="General Preparation">General Preparation</option>
+                                    <option value="Specific Preparation">Specific Preparation</option>
+                                    <option value="Pre-Competition">Pre-Competition</option>
+                                    <option value="Competition">Competition</option>
+                                    <option value="Taper">Taper / Peak</option>
+                                    <option value="Transition">Transition / Off-Season</option>
+                                </select>
+                                <div class="form-text">Current point in your training cycle.</div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3" id="training-distance-container">
+                                <label class="form-label" id="portal-dist-label">Volume &mdash; Distance (m)</label>
+                                <input type="number" class="form-control" name="distance" placeholder="e.g. 800" min="0" max="50000" id="portal-dist-input" required>
+                                <div class="form-text" id="portal-dist-hint">Total cumulative metres. E.g. 8&times;100m = 800m.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Duration (min)</label>
+                                <input type="number" class="form-control" name="duration" placeholder="e.g. 90" min="1" max="360" required>
+                                <div class="form-text">Active session time only. Exclude warm-up/cool-down.</div>
+                            </div>
+                        </div>
+
+                        <!-- Session Breakdown (Advanced Sprinter Specs) -->
+                        <div class="accordion mb-3" id="sessionBreakdownAccordion">
+                            <div class="accordion-item" style="border: 1px solid #d0d7f0; border-radius: 8px; overflow: hidden;">
+                                <h2 class="accordion-header" id="headingBreakdown">
+                                    <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBreakdown" aria-expanded="false" aria-controls="collapseBreakdown" style="background: f8f9fe; font-size: 0.9rem; font-weight: 600; color: #003066;">
+                                        <i class="bi bi-list-task me-2"></i>Detailed Session Breakdown (Optional)
+                                    </button>
+                                </h2>
+                                <div id="collapseBreakdown" class="accordion-collapse collapse" aria-labelledby="headingBreakdown" data-bs-parent="#sessionBreakdownAccordion">
+                                    <div class="accordion-body p-3" style="background: #ffffff;">
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold">Warm-up / Drills</label>
+                                            <textarea class="form-control form-control-sm" name="warmup_notes" rows="2" placeholder="e.g. Road run, laps, zigzag stairs, sledge 60m..."></textarea>
+                                        </div>
+                                        
+                                        <div class="mb-3 p-2 rounded" style="background: #fff9e6; border: 1px border #ffeeba;">
+                                            <label class="form-label small fw-bold text-dark"><i class="bi bi-fire me-1"></i>Main Set (Peak Performance)</label>
+                                            <div class="row g-2">
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm" name="main_dist" placeholder="Dist (m)">
+                                                </div>
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm" name="main_effort" placeholder="Effort (%)" min="0" max="100">
+                                                </div>
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm" name="main_time" placeholder="Time (s)" step="0.01">
+                                                </div>
+                                            </div>
+                                            <div class="form-text mt-1" style="font-size: 0.7rem;">Capture your best rep's distance, intensity %, and actual time.</div>
+                                        </div>
+
+                                        <div>
+                                            <label class="form-label small fw-bold">Additional Workout / Fartlek</label>
+                                            <textarea class="form-control form-control-sm" name="extra_work" rows="2" placeholder="e.g. Fartlek 100m x 10 with 100m walk rest..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Borg CR10 RPE -->
+                        <div class="mb-3 p-3 rounded" style="background:#f8f9fe; border:1px solid #d0d7f0;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-speedometer2 me-1"></i>Session RPE &mdash; Borg CR10 Scale</span>
+                                <span class="badge bg-jru-blue intensity-value" id="rpe-value-badge">5</span>
+                            </label>
+                            <input type="range" class="form-range intensity-range" name="intensity" id="rpeSlider" min="0" max="10" step="1" value="5">
+                            <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                            </div>
+                            <div class="mt-2 p-2 rounded text-center fw-bold" id="rpe-descriptor" style="background:#e8eeff; color:#003066; font-size:0.85rem;">Hard</div>
+                            <div class="form-text mt-1">Rate the <strong>overall effort of the whole session</strong> &mdash; not just the hardest part.</div>
+                        </div>
+
+                        <!-- Post-Session Fatigue -->
+                        <div class="mb-3 p-3 rounded" style="background:#fff8f0; border:1px solid #ffe0b2;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-battery-half me-1"></i>Post-Session Fatigue</span>
+                                <span class="badge bg-warning text-dark" id="fatigue-value-badge">5</span>
+                            </label>
+                            <input type="range" class="form-range" name="fatigue" id="fatigueSlider" min="1" max="10" step="1" value="5">
+                            <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                <span>1 Fresh</span><span></span><span></span><span></span><span>5 Moderate</span><span></span><span></span><span></span><span></span><span></span><span>10 Exhausted</span>
+                            </div>
+                            <div class="form-text mt-1">How fatigued do you feel <strong>right now, at session end</strong>? 1 = Completely Fresh, 10 = Cannot continue.</div>
+                        </div>
+
+                        <div class="mb-2 p-2 bg-light rounded d-flex justify-content-between align-items-center border-start border-4" style="border-color:#FFCC00 !important;">
+                            <span class="fw-bold text-jru-blue">Session Impact (Training Load):</span>
+                            <span id="portal-load-preview" class="badge bg-jru-blue fs-6">0 Load Units</span>
+                        </div>
+                        <div class="form-text mb-3 text-muted">Training Load = Duration &times; RPE. Used for ACWR injury risk calculation.</div>
+                        <button type="submit" class="btn btn-jru-primary w-100">
+                            <i class="bi bi-check-circle me-1"></i>Submit Training Log
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Log Wellness Modal -->
+    <div class="modal fade" id="logWellnessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title"><i class="bi bi-heart-pulse me-2"></i>Daily Wellness Check-in</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-success py-2 mb-3" style="font-size:0.82rem;">
+                        <i class="bi bi-clock-history me-1"></i>
+                        <strong>Complete this check-in every morning</strong> within 30 minutes of waking — before any training or caffeine — for accurate data.
+                    </div>
+                    <div class="alert alert-light border py-2 mb-3" style="font-size:0.8rem; color:#444;">
+                        <strong>Hooper Index</strong> — A scientifically validated 4-item questionnaire (fatigue, sleep quality, muscle soreness, stress) used internationally in elite athletics programmes to monitor athlete readiness.
+                        <br>All sliders use a <strong>1 (Very Very Low) → 7 (Very Very High)</strong> scale.
+                    </div>
+                    <form id="logWellnessForm">
+                        <input type="hidden" name="athlete_id" value="{{ athlete.id }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sleep Duration (hrs)</label>
+                                <input type="number" step="0.5" class="form-control" name="sleep_hours" placeholder="e.g. 7.5" min="3" max="14" value="8" required>
+                                <div class="form-text">Total hours slept last night.</div>
+                            </div>
+                        </div>
+
+                        <!-- Hooper Index Sliders (1-7) -->
+                        <div class="row g-3">
+                            <!-- Fatigue -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded h-100" style="background:#f8f9fe; border:1px solid #d0d7f0;">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span><i class="bi bi-battery me-1"></i>Fatigue</span>
+                                        <span class="badge bg-jru-blue" id="fatigue-hi-badge">4</span>
+                                    </label>
+                                    <input type="range" class="form-range" name="morning_fatigue" id="fatigueHiSlider" min="1" max="7" step="1" value="4">
+                                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                        <span>1 Very Very Low</span><span>4 Moderate</span><span>7 Very Very High</span>
+                                    </div>
+                                    <div class="form-text mt-1">Overall sense of tiredness on waking this morning.</div>
+                                </div>
+                            </div>
+                            <!-- Sleep Quality -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded h-100" style="background:#f0fff4; border:1px solid #b2dfdb;">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span><i class="bi bi-moon-stars me-1"></i>Sleep Quality</span>
+                                        <span class="badge bg-success" id="sleep-q-badge">4</span>
+                                    </label>
+                                    <input type="range" class="form-range" name="sleep_quality" id="sleepQSlider" min="1" max="7" step="1" value="4">
+                                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                        <span>1 Very Very Poor</span><span>4 Moderate</span><span>7 Very Very Good</span>
+                                    </div>
+                                    <div class="form-text mt-1">How well did you sleep? Consider depth, interruptions, and feeling rested.</div>
+                                </div>
+                            </div>
+                            <!-- Muscle Soreness -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded h-100" style="background:#fff8f0; border:1px solid #ffe0b2;">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span><i class="bi bi-person-exclamation me-1"></i>Muscle Soreness (DOMS)</span>
+                                        <span class="badge bg-warning text-dark" id="soreness-hi-badge">4</span>
+                                    </label>
+                                    <input type="range" class="form-range" name="soreness" id="sorenessHiSlider" min="1" max="7" step="1" value="4">
+                                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                        <span>1 None</span><span>4 Moderate</span><span>7 Very Severe</span>
+                                    </div>
+                                    <div class="form-text mt-1">Degree of muscle pain/stiffness across the body right now.</div>
+                                </div>
+                            </div>
+                            <!-- Stress -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded h-100" style="background:#fdf0ff; border:1px solid #e1bee7;">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span><i class="bi bi-brain me-1"></i>Stress Level</span>
+                                        <span class="badge" id="stress-hi-badge" style="background:#7b1fa2;">4</span>
+                                    </label>
+                                    <input type="range" class="form-range" name="stress_level" id="stressHiSlider" min="1" max="7" step="1" value="4">
+                                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                        <span>1 Very Very Low</span><span>4 Moderate</span><span>7 Very Very High</span>
+                                    </div>
+                                    <div class="form-text mt-1">Overall mental/emotional stress — includes academics, personal life, competition pressure.</div>
+                                </div>
+                            </div>
+                            <!-- Mood / Motivation -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded h-100" style="background:#f1f8ff; border:1px solid #bbdefb;">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span><i class="bi bi-emoji-smile me-1"></i>Mood &amp; Motivation</span>
+                                        <span class="badge" id="mood-hi-badge" style="background:#1565c0;">4</span>
+                                    </label>
+                                    <input type="range" class="form-range" name="motivation" id="moodHiSlider" min="1" max="7" step="1" value="4">
+                                    <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                        <span>1 Very Very Low</span><span>4 Moderate</span><span>7 Very Very High</span>
+                                    </div>
+                                    <div class="form-text mt-1">How motivated and positive do you feel about training today?</div>
+                                </div>
+                            </div>
+                            <!-- Hooper Score Preview -->
+                            <div class="col-md-6">
+                                <div class="p-3 rounded h-100 d-flex flex-column justify-content-center align-items-center" style="background:#e8f0fe; border:1px solid #c5cae9;">
+                                    <div class="text-muted fw-semibold mb-1" style="font-size:0.8rem;">Hooper Index Score</div>
+                                    <div id="hooper-score" class="display-6 fw-bold text-jru-blue">16</div>
+                                    <div id="hooper-label" class="badge bg-jru-blue mt-1">Acceptable</div>
+                                    <div class="form-text text-center mt-2" style="font-size:0.75rem;">
+                                        Sum of Fatigue + Soreness + Stress + (8 – Motivation).<br>
+                                        <strong>4–12:</strong> Good &nbsp;|&nbsp; <strong>13–20:</strong> Acceptable &nbsp;|&nbsp; <strong>21–28:</strong> At Risk
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-jru-primary w-100">
+                                <i class="bi bi-check-circle me-1"></i>Submit Wellness Check-in
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Day Details Modal (Chart Interactivity) -->
+    <div class="modal fade" id="dayDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title" id="day-details-title"><i class="bi bi-info-circle me-2"></i>Day Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="day-details-body">
+                    <!-- Content injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Result Modal -->
+    <div class="modal fade" id="logResultModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title">Log Competition Result</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="logResultForm">
+                        <input type="hidden" name="athlete_id" value="{{ athlete.id }}">
+                        <div class="mb-3">
+                            <label class="form-label">Competition/Meet Name</label>
+                            <input type="text" class="form-control" name="competition" placeholder="e.g. NCAA Season 99 Track Meet">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Event</label>
+                                <select class="form-select" id="portal-result-event-select" name="event" required>
+                                    <option value="{{ athlete.event }}">{{ athlete.event }}</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Time (s)</label>
+                                <input type="number" step="0.01" class="form-control" name="time" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Dist (m)</label>
+                                <input type="number" step="0.01" class="form-control" name="distance" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Rank</label>
+                                <input type="number" class="form-control" name="rank" placeholder="1">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Log Result</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert">
+            <div class="toast-header text-white jru-navbar">
+                <strong class="me-auto">JRU Athletics</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toast-message"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/ui_utils.js') }}"></script>
+    <script>
+        const athleteId = parseInt("{{ athlete.id }}", 10);
+        const athleteEvent = "{{ athlete.event }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/athlete_portal.js') }}?v=2"></script>
+</body>
+</html>

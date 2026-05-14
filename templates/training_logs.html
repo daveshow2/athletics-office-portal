@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JRU Athletics - Training Logs</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg jru-navbar">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <div class="logo-circle me-2">JRU</div>
+                <span class="fw-bold">Jose Rizal University <span class="fw-light d-none d-sm-inline">| Athletics</span></span>
+            </a>
+            <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="/">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="/athletes">Athletes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active fw-bold" href="/training-logs">Training Logs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold d-flex align-items-center" href="/approvals">
+                            Approvals
+                            <span id="global-pending-badge" class="badge rounded-pill bg-danger ms-1" style="display: none; font-size: 0.65rem;">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
+                        <button class="btn btn-sm btn-jru-primary" style="padding: 0.4rem 1rem;" data-bs-toggle="modal" data-bs-target="#logTrainingModal">Log Activity</button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="page-title text-jru-blue">Training History</h1>
+                    <p class="text-muted fw-bold">Comprehensive Daily Log of Heavy Bombers Sessions</p>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="month" id="monthFilter" class="form-control form-control-sm" style="width: auto;">
+                    <a href="/api/export/training" id="exportBtn" class="btn btn-jru-outline">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                    </a>
+                    <button class="btn btn-jru-primary" data-bs-toggle="modal" data-bs-target="#logTrainingModal">
+                        <i class="bi bi-calendar-plus me-1"></i> New Log
+                    </button>
+                </div>
+            </div>
+        
+        <!-- Bulk Actions / Approval Toolbar -->
+        <div class="row mb-3" id="approval-toolbar" style="display:none;">
+            <div class="col-12">
+                <div class="p-3 bg-white rounded shadow-sm border-start border-4 border-warning d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-bold text-jru-blue"><i class="bi bi-shield-check me-1"></i>Approval Center:</span>
+                        <span id="pendingCountText" class="ms-2">You have 0 pending training logs.</span>
+                    </div>
+                    <button id="confirmAllBtn" class="btn btn-success btn-sm px-4 fw-bold">
+                        <i class="bi bi-check-all me-1"></i> Confirm All Pending
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Training Logs Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-jru-blue">Date</th>
+                                    <th class="text-jru-blue">Athlete</th>
+                                    <th class="text-jru-blue">Type</th>
+                                    <th class="text-jru-blue">Dist (m)</th>
+                                    <th class="text-jru-blue">Dur (min)</th>
+                                    <th class="text-jru-blue">Intensity</th>
+                                    <th class="text-jru-blue">Fatigue</th>
+                                    <th class="text-jru-blue text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-table-body">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">Loading logs...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Training Modal & Other Modals would go here for completeness, but focusing on the list -->
+    <!-- Including the Log Modal for functionality -->
+    <div class="modal fade" id="logTrainingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title"><i class="bi bi-calendar-check me-2"></i>Submit Daily Training Log</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 mb-3" style="font-size:0.82rem;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Data Accuracy Note:</strong> Rate all values <em>immediately after</em> the session ends. Do not estimate from memory.
+                    </div>
+                    <form id="logTrainingForm">
+                        <div class="mb-3">
+                            <label class="form-label">Select Athlete(s)</label>
+                            <select class="form-select" id="athleteSelect" name="athlete_ids" multiple required style="height: 120px;">
+                                <option value="">Loading athletes...</option>
+                            </select>
+                            <div class="form-text">Hold Ctrl (Cmd) to select multiple athletes.</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Training Phase</label>
+                                <select class="form-select" name="training_phase">
+                                    <option value="General Preparation">General Preparation</option>
+                                    <option value="Specific Preparation">Specific Preparation</option>
+                                    <option value="Pre-Competition">Pre-Competition</option>
+                                    <option value="Competition">Competition</option>
+                                    <option value="Taper">Taper / Peak</option>
+                                    <option value="Transition">Transition / Off-Season</option>
+                                </select>
+                                <div class="form-text">Current periodization phase.</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Workout Type</label>
+                                <select class="form-select" name="training_type" id="workoutTypeSelect" required>
+                                    <option value="Track">Track Session</option>
+                                    <option value="Weight Room">Weight Room</option>
+                                    <option value="Recovery">Active Recovery</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Volume &mdash; Distance (m)</label>
+                                <input type="number" class="form-control" name="distance" placeholder="e.g. 800" min="0" max="50000" required>
+                                <div class="form-text">Total cumulative metres. E.g. 8&times;100m = 800m.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Duration (min)</label>
+                                <input type="number" class="form-control" name="duration" placeholder="e.g. 90" min="1" max="360" required>
+                                <div class="form-text">Active session time only. Exclude warm-up/cool-down.</div>
+                            </div>
+                        </div>
+
+                        <!-- Borg CR10 RPE -->
+                        <div class="mb-3 p-3 rounded" style="background:#f8f9fe; border:1px solid #d0d7f0;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-speedometer2 me-1"></i>Session RPE &mdash; Borg CR10 Scale</span>
+                                <span class="badge bg-jru-blue intensity-value" id="rpe-value-badge">5</span>
+                            </label>
+                            <input type="range" class="form-range intensity-range" name="intensity" id="rpeSlider" min="0" max="10" step="1" value="5">
+                            <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                            </div>
+                            <div class="mt-2 p-2 rounded text-center fw-bold" id="rpe-descriptor" style="background:#e8eeff; color:#003066; font-size:0.85rem;">Hard</div>
+                            <div class="form-text mt-1">Rate the <strong>overall effort of the whole session</strong> &mdash; not the hardest part.</div>
+                        </div>
+
+                        <!-- Post-Session Fatigue -->
+                        <div class="mb-3 p-3 rounded" style="background:#fff8f0; border:1px solid #ffe0b2;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-battery-half me-1"></i>Post-Session Fatigue</span>
+                                <span class="badge bg-warning text-dark" id="fatigue-value-badge">5</span>
+                            </label>
+                            <input type="range" class="form-range" name="fatigue" id="fatigueSlider" min="1" max="10" step="1" value="5">
+                            <div class="d-flex justify-content-between" style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                <span>1 Fresh</span><span></span><span></span><span></span><span>5 Moderate</span><span></span><span></span><span></span><span></span><span></span><span>10 Exhausted</span>
+                            </div>
+                            <div class="form-text mt-1">How fatigued do you feel <strong>right now, at session end</strong>?</div>
+                        </div>
+
+                        <div class="mb-3 p-2 bg-light rounded d-flex justify-content-between align-items-center border-start border-4" style="border-color:#FFCC00 !important;">
+                            <span class="fw-bold text-jru-blue">Session Impact (Training Load):</span>
+                            <span id="live-load-preview" class="badge bg-jru-blue fs-6">0 Load Units</span>
+                        </div>
+                        <div class="form-text mb-3 text-muted">Training Load = Duration &times; RPE. Used for ACWR injury risk calculation.</div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Submit Training Log</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header text-white">
+                <strong class="me-auto">JRU Athletics Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-message"></div>
+        </div>
+    </div>
+
+    <!-- Session Details Modal -->
+    <div class="modal fade" id="dayDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog shadow">
+            <div class="modal-content border-0">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title" id="day-details-title"><i class="bi bi-info-circle me-2"></i>Session Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" id="day-details-body">
+                    <!-- Content injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Shared Utilities -->
+    <script src="{{ url_for('static', filename='js/ui_utils.js') }}"></script>
+    <!-- Custom Training Logs Logic -->
+    <script src="{{ url_for('static', filename='js/training_logs.js') }}"></script>
+</body>
+</html>

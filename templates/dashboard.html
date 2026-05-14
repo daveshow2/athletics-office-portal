@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JRU Track & Field Performance Platform</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg jru-navbar">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <div class="logo-circle me-2">JRU</div>
+                <span class="fw-bold">Jose Rizal University <span class="fw-light d-none d-sm-inline">|
+                        Athletics</span></span>
+            </a>
+            <button class="navbar-toggler text-white" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active fw-bold" href="/">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="/athletes">Athletes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold" href="/training-logs">Training Logs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-bold d-flex align-items-center" href="/approvals">
+                            Approvals
+                            <span id="global-pending-badge" class="badge rounded-pill bg-danger ms-1" style="display: none; font-size: 0.65rem;">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-3 mt-2 mt-lg-0">
+                        <button class="btn btn-sm btn-jru-primary" style="padding: 0.4rem 1rem;" data-bs-toggle="modal"
+                            data-bs-target="#logTrainingModal">Log Training</button>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <button class="btn btn-sm btn-jru-outline" style="padding: 0.4rem 1rem;" data-bs-toggle="modal"
+                            data-bs-target="#addAthleteModal">Add Athlete</button>
+                    </li>
+                    <li class="nav-item ms-lg-2 mt-2 mt-lg-0 d-flex align-items-center">
+                        <span class="badge me-2"
+                            style="background:linear-gradient(135deg,#FFC107,#e6ac00);color:#003087;font-size:0.72rem;padding:0.3rem 0.7rem;border-radius:20px;">
+                            <i class="bi bi-shield-fill me-1"></i>Coach: {{ display_name }}
+                        </span>
+                        <a href="/logout" class="btn btn-sm"
+                            style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;font-size:0.8rem;">
+                            <i class="bi bi-box-arrow-right me-1"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12 text-center text-md-start">
+                <h1 class="page-title text-jru-blue">Heavy Bombers Dashboard</h1>
+                <p class="text-muted fw-bold">Jose Rizal University - Sports Science & Performance Analytics</p>
+
+                <!-- Quick Entry Buttons -->
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-jru-primary me-2 mb-2" data-bs-toggle="modal"
+                        data-bs-target="#logTrainingModal">
+                        <i class="bi bi-calendar-check me-1"></i> Log Training
+                    </button>
+                    <button class="btn btn-sm btn-jru-outline me-2 mb-2" data-bs-toggle="modal"
+                        data-bs-target="#addWellnessModal">
+                        <i class="bi bi-heart-pulse me-1"></i> Log Wellness
+                    </button>
+                    <button class="btn btn-sm btn-jru-outline me-2 mb-2" data-bs-toggle="modal"
+                        data-bs-target="#addPerformanceModal">
+                        <i class="bi bi-trophy me-1"></i> Log Result
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="row g-4 mb-4">
+            <!-- Metric 1 -->
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-title">Total Athletes</div>
+                    <div id="stat-total-athletes" class="metric-value text-jru-blue">-</div>
+                </div>
+            </div>
+            <!-- Metric 2 -->
+            <div class="col-md-3">
+                <div class="metric-card gold-accent">
+                    <div class="metric-title">Active Logs (All Time)</div>
+                    <div id="stat-active-logs" class="metric-value text-jru-gold text-dark">-</div>
+                </div>
+            </div>
+            <!-- Metric 3 -->
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <div class="metric-title">High Injury Risk</div>
+                    <div id="stat-high-risk" class="metric-value text-danger">-</div>
+                </div>
+            </div>
+            <!-- Metric 4 -->
+            <div class="col-md-3">
+                <div class="metric-card gold-accent">
+                    <div class="metric-title">Peak Form Approaching</div>
+                    <div id="stat-peak-approaching" class="metric-value text-jru-blue">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-8">
+                <div class="dashboard-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title m-0">Team Performance Trends</h5>
+                        <select id="eventTrendSelector"
+                            class="form-select form-select-sm w-auto border-0 bg-light text-jru-blue fw-bold">
+                            <option value="100m">100m Sprint</option>
+                            <option value="200m">200m Sprint</option>
+                            <option value="400m">400m Sprint</option>
+                            <option value="800m">800m Run</option>
+                            <option value="1500m">1500m Run</option>
+                            <option value="3km">3000m Run</option>
+                            <option value="5km">5000m Run</option>
+                            <option value="110mH">110m Hurdles</option>
+                            <option value="400mH">400m Hurdles</option>
+                            <option value="Steeplechase">3000m Steeplechase</option>
+                            <option value="Long Jump">Long Jump</option>
+                            <option value="High Jump">High Jump</option>
+                            <option value="Javelin">Javelin Throw</option>
+                            <option value="Discus">Discus Throw</option>
+                            <option value="Shotput">Shot Put</option>
+                        </select>
+                    </div>
+                    <canvas id="performanceChart" height="100"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="dashboard-card">
+                    <h5 class="card-title mb-3">Training Load vs Fatigue</h5>
+                    <canvas id="loadChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Athlete List -->
+        <div class="row">
+            <div class="col-12">
+                <div class="dashboard-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="m-0">Top Athletes Ranking</h5>
+                        <div class="d-flex align-items-center">
+                            <select id="rankingEventSelector"
+                                class="form-select form-select-sm w-auto border-0 bg-light text-jru-blue fw-bold me-2">
+                                <option value="">All Events</option>
+                                <option value="100m Sprint">100m Sprint</option>
+                                <option value="200m Sprint">200m Sprint</option>
+                                <option value="400m Sprint">400m Sprint</option>
+                                <option value="800m Run">800m Run</option>
+                                <option value="1500m Run">1500m Run</option>
+                                <option value="3000m Run">3000m Run</option>
+                                <option value="5000m Run">5000m Run</option>
+                                <option value="110m Hurdles">110m Hurdles</option>
+                                <option value="400m Hurdles">400m Hurdles</option>
+                                <option value="3000m Steeplechase">3000m Steeplechase</option>
+                                <option value="Long Jump">Long Jump</option>
+                                <option value="High Jump">High Jump</option>
+                                <option value="Javelin Throw">Javelin Throw</option>
+                                <option value="Discus Throw">Discus Throw</option>
+                                <option value="Shot Put">Shot Put</option>
+                            </select>
+                            <a href="/athletes" class="btn btn-sm btn-jru-primary">View All</a>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-jru-blue">Name</th>
+                                    <th class="text-jru-blue">Event</th>
+                                    <th class="text-jru-blue">Latest Result</th>
+                                    <th class="text-jru-blue">Predicted Peak</th>
+                                    <th class="text-jru-blue">Injury Risk</th>
+                                    <th class="text-jru-blue">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="athlete-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">Loading athletes...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Athlete Modal -->
+    <div class="modal fade" id="addAthleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title">Register New Athlete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addAthleteForm">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" name="name" required placeholder="e.g. Mark Santos">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Primary Event</label>
+                            <select class="form-select" name="event" required>
+                                <option value="100m Sprint">100m Sprint</option>
+                                <option value="200m Sprint">200m Sprint</option>
+                                <option value="400m Sprint">400m Sprint</option>
+                                <option value="800m Run">800m Run</option>
+                                <option value="1500m Run">1500m Run</option>
+                                <option value="3000m Run">3000m Run</option>
+                                <option value="5000m Run">5000m Run</option>
+                                <option value="110m Hurdles">110m Hurdles</option>
+                                <option value="400m Hurdles">400m Hurdles</option>
+                                <option value="3000m Steeplechase">3000m Steeplechase</option>
+                                <option value="Long Jump">Long Jump</option>
+                                <option value="High Jump">High Jump</option>
+                                <option value="Javelin Throw">Javelin Throw</option>
+                                <option value="Discus Throw">Discus Throw</option>
+                                <option value="Shot Put">Shot Put</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Age</label>
+                                <input type="number" class="form-control" name="age" value="20" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Height (cm)</label>
+                                <input type="number" step="0.1" class="form-control" name="height" value="175" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Weight (kg)</label>
+                                <input type="number" step="0.1" class="form-control" name="weight" value="70" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Register Athlete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Training Modal -->
+    <div class="modal fade" id="logTrainingModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title"><i class="bi bi-calendar-check me-2"></i>Submit Daily Training Log</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 mb-3" style="font-size:0.82rem;">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>Data Accuracy Note:</strong> Rate all values <em>immediately after</em> the session
+                        ends. Do not estimate from memory.
+                    </div>
+                    <form id="logTrainingForm">
+                        <div class="mb-3">
+                            <label class="form-label">Select Athlete(s)</label>
+                            <select class="form-select" id="athleteSelect" name="athlete_ids" multiple required
+                                style="height: 120px;">
+                                <option value="">Loading athletes...</option>
+                            </select>
+                            <div class="form-text">Hold Ctrl (Cmd) to select multiple athletes.</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" id="logDate" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Training Phase</label>
+                                <select class="form-select" name="training_phase">
+                                    <option value="General Preparation">General Preparation</option>
+                                    <option value="Specific Preparation">Specific Preparation</option>
+                                    <option value="Pre-Competition">Pre-Competition</option>
+                                    <option value="Competition">Competition</option>
+                                    <option value="Taper">Taper / Peak</option>
+                                    <option value="Transition">Transition / Off-Season</option>
+                                </select>
+                                <div class="form-text">Current periodization phase.</div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Workout Type</label>
+                                <select class="form-select" name="training_type" id="workoutTypeSelect" required>
+                                    <option value="Track">Track Session</option>
+                                    <option value="Weight Room">Weight Room</option>
+                                    <option value="Recovery">Active Recovery</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3" id="training-distance-container">
+                                <label class="form-label">Volume — Distance (m)</label>
+                                <input type="number" class="form-control" name="distance" placeholder="e.g. 800" min="0"
+                                    max="50000" required>
+                                <div class="form-text">Total cumulative metres run/thrown/jumped. E.g. 8×100m = 800m.
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Duration (min)</label>
+                                <input type="number" class="form-control" name="duration" placeholder="e.g. 90" min="1"
+                                    max="360" required>
+                                <div class="form-text">Active session time only. Exclude warm-up/cool-down.</div>
+                            </div>
+                        </div>
+
+                        <!-- Session Breakdown (Advanced Sprinter Specs) -->
+                        <div class="accordion mb-3" id="sessionBreakdownAccordion">
+                            <div class="accordion-item"
+                                style="border: 1px solid #d0d7f0; border-radius: 8px; overflow: hidden;">
+                                <h2 class="accordion-header" id="headingBreakdown">
+                                    <button class="accordion-button collapsed py-2" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#collapseBreakdown"
+                                        aria-expanded="false" aria-controls="collapseBreakdown"
+                                        style="background: f8f9fe; font-size: 0.9rem; font-weight: 600; color: #003066;">
+                                        <i class="bi bi-list-task me-2"></i>Detailed Session Breakdown (Optional)
+                                    </button>
+                                </h2>
+                                <div id="collapseBreakdown" class="accordion-collapse collapse"
+                                    aria-labelledby="headingBreakdown" data-bs-parent="#sessionBreakdownAccordion">
+                                    <div class="accordion-body p-3" style="background: #ffffff;">
+                                        <div class="mb-3">
+                                            <label class="form-label small fw-bold">Warm-up / Drills</label>
+                                            <textarea class="form-control form-control-sm" name="warmup_notes" rows="2"
+                                                placeholder="e.g. Road run, laps, zigzag stairs, sledge 60m..."></textarea>
+                                        </div>
+
+                                        <div class="mb-3 p-2 rounded"
+                                            style="background: #fff9e6; border: 1px border #ffeeba;">
+                                            <label class="form-label small fw-bold text-dark"><i
+                                                    class="bi bi-fire me-1"></i>Main Set (Peak Performance)</label>
+                                            <div class="row g-2">
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm"
+                                                        name="main_dist" placeholder="Dist (m)">
+                                                </div>
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm"
+                                                        name="main_effort" placeholder="Effort (%)" min="0" max="100">
+                                                </div>
+                                                <div class="col-4">
+                                                    <input type="number" class="form-control form-control-sm"
+                                                        name="main_time" placeholder="Time (s)" step="0.01">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="form-label small fw-bold">Additional Workout / Fartlek</label>
+                                            <textarea class="form-control form-control-sm" name="extra_work" rows="2"
+                                                placeholder="e.g. Fartlek 100m x 10 with 100m walk rest..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Borg CR10 RPE -->
+                        <div class="mb-3 p-3 rounded" style="background:#f8f9fe; border:1px solid #d0d7f0;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-speedometer2 me-1"></i>Session RPE — Borg CR10 Scale</span>
+                                <span class="badge bg-jru-blue intensity-value" id="rpe-value-badge">5</span>
+                            </label>
+                            <input type="range" class="form-range intensity-range" name="intensity" id="rpeSlider"
+                                min="0" max="10" step="1" value="5">
+                            <div class="d-flex justify-content-between"
+                                style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+                            </div>
+                            <div class="mt-2 p-2 rounded text-center fw-bold" id="rpe-descriptor"
+                                style="background:#e8eeff; color:#003066; font-size:0.85rem;">Hard</div>
+                            <div class="form-text mt-1">Rate the <strong>overall effort of the whole session</strong> —
+                                not the hardest part.</div>
+                        </div>
+
+                        <!-- Post-Session Fatigue -->
+                        <div class="mb-3 p-3 rounded" style="background:#fff8f0; border:1px solid #ffe0b2;">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-battery-half me-1"></i>Post-Session Fatigue</span>
+                                <span class="badge bg-warning text-dark fatigue-value" id="fatigue-value-badge">5</span>
+                            </label>
+                            <input type="range" class="form-range fatigue-range" name="fatigue" id="fatigueSlider"
+                                min="1" max="10" step="1" value="5">
+                            <div class="d-flex justify-content-between"
+                                style="font-size:0.72rem; color:#6c757d; margin-top:-4px;">
+                                <span>1 Fresh</span><span></span><span></span><span></span><span>5
+                                    Moderate</span><span></span><span></span><span></span><span></span><span></span><span>10
+                                    Exhausted</span>
+                            </div>
+                            <div class="form-text mt-1">How fatigued do you feel <strong>right now, at session
+                                    end</strong>? 1 = Completely Fresh, 10 = Cannot continue.</div>
+                        </div>
+
+                        <div class="mb-3 p-2 bg-light rounded d-flex justify-content-between align-items-center border-start border-4"
+                            style="border-color:#FFCC00 !important;">
+                            <span class="fw-bold text-jru-blue">Session Impact (Training Load):</span>
+                            <span id="live-load-preview" class="badge bg-jru-blue fs-6">0 Load Units</span>
+                        </div>
+                        <div class="form-text mb-3 text-muted">Training Load = Duration × RPE. Used for ACWR injury risk
+                            calculation.</div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Submit Training Log</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Team Summary Modal (Chart Interactivity) -->
+    <div class="modal fade" id="teamSummaryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title" id="team-summary-title"><i class="bi bi-people me-2"></i>Daily Team Summary
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" id="team-summary-body">
+                    <!-- Content injected by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Result Modal -->
+    <div class="modal fade" id="addPerformanceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title">Log Competition Result</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPerformanceForm">
+                        <div class="mb-3">
+                            <label class="form-label">Select Athlete</label>
+                            <select class="form-select select-athlete-list" name="athlete_id" required>
+                                <option value="">Choose Athlete...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Competition/Meet Name</label>
+                            <input type="text" class="form-control" name="competition"
+                                placeholder="e.g. NCAA Season 99 Track Meet">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Event</label>
+                                <input type="text" class="form-control" name="event" placeholder="e.g. 100m Sprint"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Time (s)</label>
+                                <input type="number" step="0.01" class="form-control" name="time" placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Dist (m)</label>
+                                <input type="number" step="0.01" class="form-control" name="distance"
+                                    placeholder="0.00">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Rank</label>
+                                <input type="number" class="form-control" name="rank" placeholder="1">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Log Result</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wellness/Recovery Modal -->
+    <div class="modal fade" id="addWellnessModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header jru-navbar text-white">
+                    <h5 class="modal-title">Daily Wellness Check-in</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addWellnessForm">
+                        <div class="mb-3">
+                            <label class="form-label">Select Athlete</label>
+                            <select class="form-select select-athlete-list" name="athlete_id" required>
+                                <option value="">Choose Athlete...</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Sleep (hours)</label>
+                                <input type="number" step="0.5" class="form-control" name="sleep_hours" value="8"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Morning Fatigue (1-10)</label>
+                            <input type="range" class="form-range" name="morning_fatigue" min="1" max="10" value="3">
+                            <div class="form-text">Vitality on waking: 1 Full Rested, 10 Drained.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Muscle Soreness (1-10)</label>
+                            <input type="range" class="form-range" name="soreness" min="1" max="10" value="3">
+                            <div class="form-text">Pain level: 1 None, 10 Severe/Debilitating.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Stress Level (1-10)</label>
+                            <input type="range" class="form-range" name="stress_level" min="1" max="10" value="2">
+                            <div class="form-text">Mental pressure: 1 Calm, 10 High Anxiety.</div>
+                        </div>
+                        <button type="submit" class="btn btn-jru-primary w-100">Submit Wellness Log</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header text-white">
+                <strong class="me-auto">JRU Athletics Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"
+                    aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-message"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Shared Utilities -->
+    <script src="{{ url_for('static', filename='js/ui_utils.js') }}"></script>
+    <!-- Custom Dashboard Logic -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+
+</html>

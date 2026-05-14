@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+
+# Database
+*.db
+instance/
+
+# Environment
+.env
+
+# VS Code
+.vscode/
+
+# Gemini AI tool files
+.gemini/
+
+# Temp / OS files
+*.log
+.DS_Store
+Thumbs.db
+
+# Node (if any)
+node_modules/

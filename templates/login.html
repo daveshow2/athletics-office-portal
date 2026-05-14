@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JRU Athletics — Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a1628 0%, #003087 50%, #1a3a6e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(255, 193, 7, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 60%, rgba(0, 48, 135, 0.3) 0%, transparent 50%);
+            animation: pulse-bg 8s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        @keyframes pulse-bg {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+        .login-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+            padding: 1.5rem;
+        }
+        .login-card {
+            background: rgba(255,255,255,0.97);
+            border-radius: 20px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #003087, #0a1f5e);
+            padding: 2.5rem 2rem 2rem;
+            text-align: center;
+            position: relative;
+        }
+        .login-header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0; right: 0;
+            height: 30px;
+            background: rgba(255,255,255,0.97);
+            border-radius: 30px 30px 0 0;
+        }
+        .logo-badge {
+            width: 72px; height: 72px;
+            background: linear-gradient(135deg, #FFC107, #e6ac00);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #003087;
+            margin: 0 auto 1.2rem;
+            box-shadow: 0 8px 25px rgba(255,193,7,0.4);
+            letter-spacing: -1px;
+        }
+        .login-header h4 {
+            color: white;
+            font-weight: 700;
+            margin: 0 0 0.25rem;
+            font-size: 1.3rem;
+        }
+        .login-header p {
+            color: rgba(255,255,255,0.65);
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        .login-body {
+            padding: 2rem;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #003087;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-control {
+            border: 2px solid #e8ecf4;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .form-control:focus {
+            border-color: #003087;
+            box-shadow: 0 0 0 3px rgba(0,48,135,0.12);
+        }
+        .input-group-text {
+            background: #f4f6fb;
+            border: 2px solid #e8ecf4;
+            border-right: none;
+            border-radius: 10px 0 0 10px;
+            color: #003087;
+        }
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #003087, #0a4dcc);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 0.8rem;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            width: 100%;
+            transition: all 0.25s;
+            box-shadow: 0 4px 15px rgba(0,48,135,0.35);
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,48,135,0.45);
+            color: white;
+        }
+        .btn-login:active { transform: translateY(0); }
+        .role-hints {
+            background: #f7f9ff;
+            border: 1px solid #dce4f5;
+            border-radius: 12px;
+            padding: 1rem 1.2rem;
+            margin-top: 1.2rem;
+        }
+        .role-hints h6 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.6rem;
+        }
+        .role-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #e8ecf5;
+        }
+        .role-row:last-child { border-bottom: none; }
+        .role-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+        }
+        .badge-coach { background: #003087; color: #FFC107; }
+        .badge-athlete { background: #FFC107; color: #003087; }
+        .alert-error {
+            background: #fff5f5;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            border-radius: 10px;
+            padding: 0.7rem 1rem;
+            font-size: 0.875rem;
+            margin-bottom: 1.2rem;
+        }
+        .footer-text {
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.78rem;
+            margin-top: 1.5rem;
+        }
+        .toggle-password {
+            cursor: pointer;
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7c8db0;
+            z-index: 5;
+        }
+        .password-wrapper { position: relative; }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-badge">JRU</div>
+                <h4>Jose Rizal University Athletics</h4>
+                <p>TrackSense Performance Portal</p>
+            </div>
+            <div class="login-body">
+                {% if error %}
+                <div class="alert-error">
+                    <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+                </div>
+                {% endif %}
+                <form method="POST" action="/login" id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                            <input type="text" class="form-control" name="username" placeholder="Enter username" required autofocus>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" class="form-control" name="password" id="passwordInput" placeholder="Enter password" required>
+                            <i class="bi bi-eye toggle-password" id="togglePwd"></i>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-login">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                    </button>
+                </form>
+
+                <div class="role-hints mt-3">
+                    <h6><i class="bi bi-info-circle me-1"></i>Access Information</h6>
+                    <div class="role-row text-muted" style="font-size:0.85rem;">
+                        <span><i class="bi bi-person-badge me-1"></i> Contact your coach if you have forgotten your password.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-text">
+            &copy; 2024 JRU Heavy Bombers Track &amp; Field &mdash; Sports Science System
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('togglePwd').addEventListener('click', function () {
+            const pwd = document.getElementById('passwordInput');
+            const isText = pwd.type === 'text';
+            pwd.type = isText ? 'password' : 'text';
+            this.className = isText ? 'bi bi-eye toggle-password' : 'bi bi-eye-slash toggle-password';
+        });
+    </script>
+</body>
+</html>

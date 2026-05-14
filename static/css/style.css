@@ -1,0 +1,215 @@
+/* JRU Theme Colors: Complete white background, Royal Blue & Gold accents */
+:root {
+    --jru-blue: #003366; /* Deep JRU Blue */
+    --jru-gold: #FFCC00; /* Vibrant JRU Gold (for dark backgrounds) */
+    --jru-gold-text: #856400; /* Darkened gold — readable on white */
+    --jru-gold-hover: #e6b800;
+    --bg-white: #ffffff;
+    --card-bg: #ffffff;
+    --text-main: #1a1a2e;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+}
+
+body {
+    background-color: var(--bg-white);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Navbar */
+.jru-navbar {
+    background-color: var(--jru-blue);
+    padding: 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.jru-navbar .navbar-brand {
+    color: #fff !important;
+}
+
+.jru-navbar .nav-link {
+    color: rgba(255,255,255,0.8) !important;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.jru-navbar .nav-link:hover, .jru-navbar .nav-link.active {
+    color: var(--jru-gold) !important;
+}
+
+.logo-circle {
+    width: 45px;
+    height: 45px;
+    background-color: var(--jru-gold);
+    color: var(--jru-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    box-shadow: 0 0 10px rgba(253, 185, 19, 0.5); /* Glowing gold effect */
+}
+
+/* Typography */
+.page-title {
+    font-weight: 700;
+    font-size: 2rem;
+    color: var(--jru-blue);
+    margin-bottom: 0.25rem;
+}
+
+/* Cards */
+.metric-card {
+    background: var(--card-bg);
+    border: none;
+    border-left: 5px solid var(--jru-blue);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card.gold-accent {
+    border-left: 5px solid var(--jru-gold);
+}
+
+.metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.metric-title {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--jru-blue);
+}
+
+.dashboard-card {
+    background: var(--card-bg);
+    border: none;
+    border-top: 5px solid var(--jru-gold);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    height: 100%;
+}
+
+.dashboard-card .card-title {
+    color: var(--jru-blue);
+    font-weight: 700;
+}
+
+/* Buttons */
+.btn-jru-primary {
+    background-color: var(--jru-gold);
+    color: var(--jru-blue);
+    border: 2px solid var(--jru-gold);
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.btn-jru-primary:hover {
+    background-color: transparent;
+    color: var(--jru-gold);
+}
+
+.btn-jru-outline {
+    background-color: transparent;
+    color: var(--jru-blue);
+    border: 2px solid var(--jru-blue);
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.btn-jru-outline:hover {
+    background-color: var(--jru-blue);
+    color: #fff;
+}
+
+/* Tables */
+.table {
+    margin-bottom: 0;
+}
+.table th {
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom-width: 1px;
+}
+.table td {
+    padding: 1rem 0.5rem;
+}
+
+/* JRU Badges and Text */
+.badge-jru-blue {
+    background-color: var(--jru-blue);
+    color: #fff;
+}
+
+.badge-jru-gold {
+    background-color: var(--jru-gold);
+    color: var(--jru-blue);
+}
+
+.badge {
+    padding: 0.5em 0.8em;
+    font-weight: 600;
+    border-radius: 6px;
+    font-size: 0.85em;
+}
+
+.text-jru-blue {
+    color: var(--jru-blue) !important;
+}
+
+/* Gold on DARK backgrounds (navbar/hero) = bright #FFCC00 */
+.text-jru-gold {
+    color: var(--jru-gold-text) !important; /* dark gold, readable on white */
+}
+
+/* Use this class when element is on a DARK background */
+.on-dark .text-jru-gold,
+.jru-navbar .text-jru-gold,
+.portal-hero .text-jru-gold {
+    color: var(--jru-gold) !important;
+}
+
+.bg-jru-blue {
+    background-color: var(--jru-blue) !important;
+    color: #fff !important;
+}
+
+/* Ensure all table text is always visible */
+.table td, .table th {
+    color: var(--text-main);
+}
+
+.table td.text-jru-blue, .table th.text-jru-blue {
+    color: var(--jru-blue) !important;
+}
+
+/* Fix: card metric values on white — use blue not golden */
+.metric-value.text-jru-gold {
+    color: var(--jru-gold-text) !important;
+}
+
+/* Badge contrast fixes */
+.badge.bg-jru-blue {
+    background-color: var(--jru-blue) !important;
+    color: #fff !important;
+}
