@@ -358,15 +358,18 @@ async function loadResults(forceEvent = null) {
                 ? '<span class="badge bg-success-subtle text-success border border-success-subtle fw-normal"><i class="bi bi-check-circle me-1"></i>Confirmed</span>'
                 : '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-normal"><i class="bi bi-clock-history me-1"></i>Pending Review</span>';
 
+            const rankVal = r.rank ? `#${r.rank}` : '--';
+
             return `
             <tr>
                 <td>${r.date}</td>
                 <td>${r.competition || 'Training Session'}</td>
                 <td><span class="badge bg-jru-blue">${data.athlete.selected_event}</span></td>
                 <td class="fw-bold text-jru-gold">${r.formatted_value}</td>
-                <td>${statusBadge}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteResult(${r.result_id})" title="Delete entry">
+                <td><span class="badge bg-light text-dark">${rankVal}</span></td>
+                <td class="text-nowrap">
+                    ${statusBadge}
+                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteResult(${r.result_id})" title="Delete entry">
                         <i class="bi bi-trash"></i>
                     </button>
                 </td>

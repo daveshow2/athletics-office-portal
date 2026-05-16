@@ -93,17 +93,20 @@ document.addEventListener("DOMContentLoaded", function() {
                             <td>${p.date}</td>
                             <td class="fw-bold">${p.competition || 'Sanctioned Meet'}</td>
                             <td class="text-jru-blue fw-bold fs-5">${p.formatted_value}</td>
-                            <td>${statusBadge}</td>
                             <td><span class="badge bg-light text-dark">${rank}</span></td>
-                            <td>
-                                <div class="btn-group">
-                                    ${confirmBtn}
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="openEditResultModal(${p.result_id})" title="Edit Result">
-                                        <i class="bi bi-pencil-fill"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteResult(${p.result_id})" title="Delete Result">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                            <td><span class="badge bg-jru-gold-subtle text-jru-blue border border-jru-gold-subtle">${pts}</span></td>
+                            <td class="text-nowrap">
+                                <div class="d-flex align-items-center">
+                                    ${statusBadge}
+                                    <div class="btn-group ms-2">
+                                        ${confirmBtn}
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="openEditResultModal(${p.result_id})" title="Edit Result">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteResult(${p.result_id})" title="Delete Result">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
